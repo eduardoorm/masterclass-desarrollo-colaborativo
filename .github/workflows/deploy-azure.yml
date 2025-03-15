@@ -27,7 +27,7 @@ jobs:
       - name: Building web app  # ⚠️ Este paso realmente no es necesario para Node puro
         uses: azure/appservice-build@v3
         with:
-          platform: "node"
+          platform: "nodejs"
           platform-version: "20"
           source-directory: "."
           output-directory: "."
