@@ -5,56 +5,35 @@ on:
     branches:
       - master 
 env:
-  AZURE_WEBAPP_NAME: aplicaciongithubaction   # set this to your application's name
-  AZURE_WEBAPP_PACKAGE_PATH: '.'      # set this to the path to your web app project, defaults to the repository root
-  NODE_VERSION: '20.x'                # set this to the node version to use
+  AZURE_WEBAPP_NAME: aplicaciongithubaction  
+  AZURE_WEBAPP_PACKAGE_PATH: '.'     
+  NODE_VERSION: '20'                
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v4
+      - name: Cloning repository
+        uses: actions/checkout@v1
 
-      - name: Set up Node.js version
+      - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version:  ${{ env.NODE_VERSION }}
+          node-version: '20'  # Usa la versión de Node.js que necesites
 
-      - name: npm install, build, and test
-        run: |
-          npm install
-          
-      - name: Zip artifact for deployment
-        run: zip release.zip ./* -r
+      - name: Install dependencies
+        run: npm install
 
-      - name: Upload artifact for deployment job
-        uses: actions/upload-artifact@v3
+      - name: Building web app  # ⚠️ Este paso realmente no es necesario para Node puro
+        uses: azure/appservice-build@v3
         with:
-          name: node-app
-          path: release.zip
+          platform: "nodejs"
+          platform-version: "20"
+          source-directory: "."
+          output-directory: "."
 
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-    environment:
-      name: 'production'
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
-
-    steps:
-      - name: Download artifact from build job
-        uses: actions/download-artifact@v3
-        with:
-          name: node-app
-
-      - name: Unzip artifact for deployment
-        run: unzip release.zip
-
-      - name: 'Deploy to Azure Web App'
-        id: deploy-to-webapp
-        uses: azure/webapps-deploy@v2
+      - name: Deploying web app to Azure
+        uses: azure/webapps-deploy@v1
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
-          slot-name: 'production'
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
